@@ -45,7 +45,7 @@ followCompanies = False
 # your country code for the phone number - ex: fr
 country_code = "fr"
 # Your phone number without identifier - ex: 123456789
-phone_number = ""
+phone_number = "1234567893"
 
 
 # These settings are for running AngelCO job apply bot
@@ -83,7 +83,7 @@ FirstName = "O"
 LastName = "D"
 Email = "amin@boulouma.com"
 LinkedInProfileURL = "www.google.com"
-Phone = "" #OPTIONAL
+Phone = "1234567894" #OPTIONAL
 Location = "" #OPTIONAL
 HowDidYouHeard = "" #OPTIONAL
 ConsiderMeForFutureOffers = True #true = yes, false = no

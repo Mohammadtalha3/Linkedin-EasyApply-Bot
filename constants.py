@@ -1,6 +1,7 @@
 linkJobUrl = "https://www.linkedin.com/jobs/search/"
 angelCoUrl = "https://angel.co/login"
 globalLogicUrl = "https://www.globallogic.com/career-search-page/"
+phoneNumber= '1234567891'
 
 jobsPerPage = 25
 

@@ -111,6 +111,8 @@ class Linkedin:
                     countJobs += 1
 
                     jobProperties = self.getJobProperties(countJobs)
+
+                    # print(f'These are  the job properites : {jobProperties[:10]}')
                     if jobProperties:
                         print(f"Job properties: {jobProperties}")
                     button = self.easyApplyButton()
@@ -128,8 +130,87 @@ class Linkedin:
 
             prYellow(f"Category: {urlWords[0]}, {urlWords[1]} applied: {countApplied} jobs out of {countJobs}.")
 
-    def handle_application_process(self, jobProperties, offerPage):
+    def phone_number_helper(self):
         try:
+            print('Trying to find the phone number selector')
+
+            # First, let's see what inputs are available on the page
+            try:
+                all_inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                print(f"Total inputs found on page: {len(all_inputs)}")
+
+                for i, input_elem in enumerate(all_inputs):
+                    input_id = input_elem.get_attribute("id") or "No ID"
+                    input_class = input_elem.get_attribute("class") or "No Class"
+                    input_type = input_elem.get_attribute("type") or "No Type"
+                    print(f"Input {i+1}: ID='{input_id}', Class='{input_class}', Type='{input_type}'")
+            except Exception as e:
+                print(f"Error getting all inputs: {e}")
+
+            ph_selectors = [
+                "input[id*='phoneNumber-nationalNumber']",  
+                "input[id*='phoneNumber']",                 
+                "input.artdeco-text-input--input[id*='phoneNumber']",  
+                "input[data-artdeco-is-focused='true'][id*='phoneNumber']",  
+                "input[id*='phone']",                       
+                "input[type='tel']",                        
+                "input[aria-label*='phone' i]",            
+                "input[placeholder*='phone' i]"            
+            ]
+
+            phone_input = None
+
+            for i, selector in enumerate(ph_selectors):
+                try:
+                    print(f"Trying selector {i+1}: {selector}")
+                    phone_input = self.driver.find_element(By.CSS_SELECTOR, selector)  # Fixed typo here
+                    print(f"SUCCESS! Found element with selector: {selector}")
+                    break
+                except Exception as e:
+                    print(f"Selector {i+1} failed: {str(e)}")
+                    continue
+                
+            if phone_input:
+                print('Found the phone input field')
+
+                # Let's get more info about the found element
+                element_id = phone_input.get_attribute("id")
+                element_class = phone_input.get_attribute("class")
+                element_type = phone_input.get_attribute("type")
+                print(f"Found element - ID: '{element_id}', Class: '{element_class}', Type: '{element_type}'")
+
+                phone_input.clear()
+                phone_number = constants.phoneNumber
+                phone_input.send_keys(phone_number)
+                time.sleep(random.uniform(0.5, 1))
+                print(f'Phone Number filled: {phone_number}')
+            else:
+                print("No phone input field found with any selector")
+                
+                # Let's also try a more general search
+                try:
+                    print("Trying to find any input with 'phone' in the ID...")
+                    phone_inputs = self.driver.find_elements(By.XPATH, "//input[contains(@id, 'phone')]")
+                    print(f"Found {len(phone_inputs)} inputs with 'phone' in ID")
+
+                    for i, inp in enumerate(phone_inputs):
+                        inp_id = inp.get_attribute("id")
+                        inp_class = inp.get_attribute("class")
+                        print(f"Phone input {i+1}: ID='{inp_id}', Class='{inp_class}'")
+
+                except Exception as e:
+                    print(f"XPath search failed: {e}")
+                
+        except Exception as e:
+            print(f"Error filling phone number: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+
+
+    def handle_application_process(self, jobProperties, offerPage): 
+        try:
+            self.phone_number_helper()
             submit_button = self.driver.find_element(By.CSS_SELECTOR, 
                                                   "button[aria-label='Submit application']")
             submit_button.click()
@@ -204,9 +285,9 @@ class Linkedin:
                     btn_displayed = btn.is_displayed()
                     btn_enabled = btn.is_enabled()
 
-                    print(f"[DEBUG] Artdeco button {i+1}: Text='{btn_text.strip()}', "
-                          f"Aria='{btn_aria}', Displayed={btn_displayed}, Enabled={btn_enabled}")
-                    print(f"[DEBUG] Classes: {btn_class}")
+                    # print(f"[DEBUG] Artdeco button {i+1}: Text='{btn_text.strip()}', "
+                        #   f"Aria='{btn_aria}', Displayed={btn_displayed}, Enabled={btn_enabled}")
+                    # print(f"[DEBUG] Classes: {btn_class}")
 
                     # Check if this looks like an apply button
                     if any(keyword in (btn_text + btn_aria).lower() for keyword in ['apply', 'easy apply', 'submit']):
@@ -692,7 +773,7 @@ class Linkedin:
         location = element.location
         size = element.size
         
-        # Calculate center coordinates
+        # center coordinates
         center_x = location['x'] + size['width'] // 2
         center_y = location['y'] + size['height'] // 2
         
@@ -709,16 +790,16 @@ class Linkedin:
             print("[EasyApplyButton] Verifying if Easy Apply modal opened...")
             
             modal_selectors = [
-                # Updated selectors for current LinkedIn
+                
                 '//div[contains(@class, "jobs-easy-apply-modal")]',
                 '//div[@role="dialog"]',
                 '//div[contains(@class, "artdeco-modal")]',
                 '//div[contains(@class, "jobs-easy-apply-content")]',
                 '//div[contains(@class, "jobs-easy-apply")]',
                 '//form[contains(@class, "jobs-easy-apply")]',
-                # Check for modal backdrop
+                # dropdown modal
                 '//div[contains(@class, "artdeco-modal-overlay")]',
-                # Check for specific Easy Apply text in modal
+                
                 '//*[text()[contains(., "Easy Apply")] and ancestor::div[@role="dialog"]]'
             ]
             
@@ -769,7 +850,7 @@ class Linkedin:
         Check if the job has already been applied to or if it's an external application
         """
         try:
-            # Check for "Applied" status
+            
             applied_elements = self.driver.find_elements(By.XPATH, 
                 '//span[contains(text(), "Applied") or contains(text(), "Application submitted")]')
             
@@ -777,7 +858,7 @@ class Linkedin:
                 print("[JobStatus] Job already applied to")
                 return "already_applied"
             
-            # Check for external application
+            
             external_elements = self.driver.find_elements(By.XPATH, 
                 '//button[contains(text(), "Apply on company website") or contains(@aria-label, "Apply on company website")]')
             
